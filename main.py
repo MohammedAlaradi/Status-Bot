@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -53,7 +53,8 @@ async def setupStatus(interaction: discord.Interaction, reason: str, duration: s
       if interaction.user.id == i["user"]:
         i["reason"] = reason
         i["duration"] = duration
-        i["since"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        # time UTC+3
+        i["since"] = datetime.now(timezone(timedelta(hours = 3))).strftime("%Y-%m-%d %H:%M")
         found = True
         break
     if not found:
@@ -62,7 +63,8 @@ async def setupStatus(interaction: discord.Interaction, reason: str, duration: s
           "user": interaction.user.id,
           "reason": reason,
           "duration": duration,
-          "since": datetime.now().strftime("%Y-%m-%d %H:%M"),
+          # time UTC+3
+          "since": datetime.now(timezone(timedelta(hours = 3))).strftime("%Y-%m-%d %H:%M"),
         }
       )
     await interaction.response.send_message("Status updated successfully!", ephemeral=True)
