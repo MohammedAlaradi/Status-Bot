@@ -1,12 +1,17 @@
 import discord
-from discord.ext import commands
-from discord import app_commands
-from datetime import datetime, timezone, timedelta
+from discord.ext import commands, tasks
+from datetime import datetime, timezone, timedelta, time
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
 class Client(commands.Bot):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+
+  async def setup_hook(self):
+    self.clearAllStatus.start()
+
   async def on_ready(self):
     print("Status Bot is ready and connected")
     # Sync the newly added commands
@@ -16,6 +21,24 @@ class Client(commands.Bot):
       print("Commands synced successfully!")
     except Exception as e:
       print("Error! Could not sync commands. " + str(e))
+
+  @tasks.loop(time = time(hour = 0, minute = 0, tzinfo = timezone(timedelta(hours = 3))))
+  async def clearAllStatus(self):
+    embed = discord.Embed(title="Status Log", color=discord.Color.blue())
+    for i in users:
+      if i["since"] != -1:
+        # status list
+        list = "".join(f'<@{i["user"]}> **Reason:** {i["reason"]} **Duration:** {i["duration"]} **Since:** {i["since"]}')
+        embed.add_field(name = "", value = list, inline = False)
+    channel = self.get_channel(int(os.getenv("CHANNEL_ID")))
+    await channel.send(embed = embed)
+    for i in users:
+      i["since"] = -1
+
+  # wait until bot initialize before starting schedule, avoid race condition.
+  @clearAllStatus.before_loop
+  async def before_clearAllStatus(self):
+    await self.wait_until_ready()
 
   # Ignore self message
   async def on_message(self, message):
