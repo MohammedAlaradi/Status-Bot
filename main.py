@@ -2,13 +2,16 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Client(commands.Bot):
   async def on_ready(self):
     print("Status Bot is ready and connected")
     # Sync the newly added commands
     try:
-      guild = discord.Object(id = 777611696884678716)
+      guild = discord.Object(id = os.getenv("SERVER_ID"))
       await self.tree.sync(guild=guild)
       print("Commands synced successfully!")
     except Exception as e:
@@ -16,7 +19,6 @@ class Client(commands.Bot):
 
   # Ignore self message
   async def on_message(self, message):
-    # Ignore self message
     if message.author == self.user:
       return
 
@@ -35,12 +37,13 @@ intents.message_content = True
 client = Client(command_prefix = "/", intents = intents)
 
 # mjls alsh3b server ID
-GUILD_ID = discord.Object(id = 777611696884678716)
+GUILD_ID = discord.Object(id = os.getenv("SERVER_ID"))
 
 @client.tree.command(name = "afk", description = "Setup your status", guild = GUILD_ID)
 async def setupStatus(interaction: discord.Interaction, reason: str, duration: str):
   found = False
   validDuration = False
+  # only accept input that ends with 'h' or 'm'
   if duration.endswith('h') or duration.endswith('m'):
     validDuration = True
 
@@ -71,9 +74,18 @@ async def printStatus(interaction: discord.Interaction):
   embed = discord.Embed(title="Status List", color=discord.Color.blue())
   for i in users:
     if i["since"] != -1:
+      # status list
       list = "".join(f'<@{i["user"]}> **Reason:** {i["reason"]} **Duration:** {i["duration"]} **Since:** {i["since"]}')
       embed.add_field(name = "", value = list, inline = False)
-  print(list)
   await interaction.response.send_message(embed = embed)
+
+@client.tree.command(name = "clear", description = "Clear user status", guild = GUILD_ID)
+async def clearStatus(interaction: discord.Interaction):
+  for i in users:
+    # set "since" to -1, invalid input.
+    if i["user"] == interaction.user.id:
+      i["since"] = -1
+      break
+  await interaction.response.send_message("Status cleared successfully!", ephemeral = True)
 
 client.run(os.getenv("DISCORD_TOKEN"))
