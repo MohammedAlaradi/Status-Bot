@@ -31,13 +31,49 @@ users = []
 intents = discord.Intents.default()
 intents.message_content = True
 
+# commands start with '/'
 client = Client(command_prefix = "/", intents = intents)
 
 # mjls alsh3b server ID
 GUILD_ID = discord.Object(id = 777611696884678716)
 
 @client.tree.command(name = "afk", description = "Setup your status", guild = GUILD_ID)
-async def setupStatus(interaction: discord.Interaction):
-  await interaction.response.send_message("The feature is not fully implemented yet :>")
+async def setupStatus(interaction: discord.Interaction, reason: str, duration: str):
+  found = False
+  validDuration = False
+  if duration.endswith('h') or duration.endswith('m'):
+    validDuration = True
 
-client.run('')
+  if validDuration:
+    # Will ignore for first user as len(users) == 0
+    for i in users:
+      if interaction.user.id == i["user"]:
+        i["reason"] = reason
+        i["duration"] = duration
+        i["since"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        found = True
+        break
+    if not found:
+      users.append(
+        {
+          "user": interaction.user.id,
+          "reason": reason,
+          "duration": duration,
+          "since": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+      )
+    await interaction.response.send_message("Status updated successfully!", ephemeral=True)
+  else:
+    await interaction.response.send_message("Please enter the duration as number followed by 'm' for minutes and 'h' for hours", ephemeral = True)
+
+@client.tree.command(name = "status", description = "Show users status list", guild = GUILD_ID)
+async def printStatus(interaction: discord.Interaction):
+  embed = discord.Embed(title="Status List", color=discord.Color.blue())
+  for i in users:
+    if i["since"] != -1:
+      list = "".join(f'<@{i["user"]}> **Reason:** {i["reason"]} **Duration:** {i["duration"]} **Since:** {i["since"]}')
+      embed.add_field(name = "", value = list, inline = False)
+  print(list)
+  await interaction.response.send_message(embed = embed)
+
+client.run(os.getenv("DISCORD_TOKEN"))
