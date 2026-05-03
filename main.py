@@ -47,8 +47,8 @@ class Client(commands.Bot):
 
 #  {
 #   "user": userID,
-#   "reason": "argument",
-#   "duration": "argument",
+#   "reason": "String",
+#   "duration": "String ends with h or m",
 #   "since": current date&time
 #  }
 users = []
@@ -59,7 +59,7 @@ intents.message_content = True
 # commands start with '/'
 client = Client(command_prefix = "/", intents = intents)
 
-# mjls alsh3b server ID
+# server ID
 GUILD_ID = discord.Object(id = os.getenv("SERVER_ID"))
 
 @client.tree.command(name = "afk", description = "Setup your status", guild = GUILD_ID)
